@@ -1,0 +1,86 @@
+netid: by240, _______
+
+
+Plan:
+
+#########
+METADATA:
+#########
+
+According to section 1.2, allignment will be done on an 8-byte basis
+
+Let's define a chunk to be an 8-byte long piece of the heap, so that our 4096 bytes of heap can be divided into 512 chunks.
+Now we'll define a block to be a the metadata with the data it carries. each block will be made of n # of chunks.
+
+Since we know every block will be placed in a multiple of 8, we can access each of the 512 possible chunk positions with a 2-byte "pointer"
+This "pointer" can point to any block in the different chunk positions, so we can take one pointer for the next block and one for the previous.
+that will occupy 4 of our 8 available metadata bytes
+
+We can also use one bit to decide if the chunk is being used or not. But let's use 1 byte, because why not
+so far, we totalled at 5 of our 8 available metadata bytes.
+
+Well, we have so much space left, I guess we can use another 2 bytes (even though 1.5 is needed) to get the length of the chunk as well.
+that leaves us with 7 of our available 8 metadata bytes.
+
+We'll leave the last byte to be whatever, it will not be used.
+
+METADATA STRUCTURE:
+metadata = 8 chars (bytes)
+
+metadata[0,1]   := prev pointer: a number between 0-512 (can go higher, but will not) that represents the chunk location of the previous chunk
+                ----first block's previous pointer will be 0.
+                ----to access the chunk in the heap, we will have to multiply the poiner's value by 8.
+
+metadata[2,3]   := next pointer: a nunber between 0:512 (can go higher, but will not) that represents the chunk location of the next chunk
+                ----last block's next pointer will be 0.
+                ----to access the chunk in the heap, we will have to multiply the pointer's value by 8.
+
+metadata[4]     := free or not: 0 will represent free, 1 is allocated.
+
+metadata[5,6]   := the length of the 
+
+metadata[7]     := undefined, do not use
+
+
+##########
+MY_MALLOC:
+##########
+
+\\ToDo
+
+#####
+FREE:
+#####
+
+Free is a relatively easy function. All we have to do is go to the correct place in the heap, and change the metadata to denote the block is free.
+
+However, We should deal with the possibility that adjacent blocks are free. there's 3 possibilities for adjacent blocks to be free:
+(For these cases, we will refer to "this block" as the block that is currently free)
+
+    1:
+    this block comes after a block that is already free.
+    ----To deal with this case, we can check the previous block, if it's free, change metadatas as follows:
+    --------change the previous block's length to it's length + this block's length + 8 (this block's metadata).
+    --------change the previous block's next pointer to the current block's next pointer.
+    --------change the next block's previous pointer to the current block's previous pointer.
+    ----This will leave the current block in memory, but it will be completely ignored and used as free space.
+
+    2:
+    this block comes before a block that is already free.
+    ----To deal with this case, we can check the next block, if it's free, change metadatas as follows:
+    --------change this block's length to it's length + the next block's length + 8 (the next block's metadata)
+    --------change this block's next pointer to the next block's next pointer.
+    --------change the block after the next block's previous pointer to the next block's previous pointer.
+    ----This will do the same thing as the previous case just for the next block.
+
+    3:
+    this block is between free blocks.
+    ----To deal with this case, we'll basically connect the previous and next blocks to one big block with the following:
+    --------change the previous block's length to it's length + this block's length + the next block's length + 16 (the current and next block's metadata)
+    --------change the previous block's next pointer to the next block's next pointer
+    --------change the next block's previous pointer to the previous block's previous pointer.
+    ----This basically combines the last two cases.
+
+if an object that is already free is freed again or out of bounds free, crash out. 
+
+more details will be added as time goes on.
