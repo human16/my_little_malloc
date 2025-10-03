@@ -165,7 +165,3 @@ void myfree(void *ptr, char *file, int line) {
 
 
 }
-
-/*int main(void) {
-  initialize_heap();
-}*/
