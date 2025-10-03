@@ -16,11 +16,11 @@ typedef struct {
   unsigned char padding; // unused
 } metadata;
 
-void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_free) {
+void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_allocated) {
     md->prev = prev;
     md->next = next;
     md->length = length;
-    md->is_free = is_free;
+    md->is_allocated = is_allocated;
     md->padding = 0;
 }
 
@@ -113,11 +113,11 @@ void myfree(void *ptr, char *file, int line) {
     initialize_heap();
   }
   metadata *md = get_metadata(ptr-sizeof(metadata));
-  if (md->is_free) {
+  if (md->is_allocated) {
     printf("Freeing a free chunk at %p in file %s line %d", ptr, file, line);
     return; // ADD ATEXIT TO REPORT ERROR
   }
-  md -> is_free = 1;
+  md -> is_allocated = 1;
   
 
   // coalescing free chunks
@@ -125,7 +125,7 @@ void myfree(void *ptr, char *file, int line) {
   // checking if prev chunk is free
   if (md->prev != 0) {
     metadata *prev_md = get_metadata(heap.bytes + md->prev*8);
-    if (prev_md->is_free) {
+    if (prev_md->is_allocated) {
 
       // case 1 as discribed in the README
       prev_md->length += md->length + sizeof(metadata); 
@@ -135,7 +135,7 @@ void myfree(void *ptr, char *file, int line) {
         // making sure the current chunk is not the last chunk
         metadata *next_md = get_metadata(heap.bytes + md->next*8);
         next_md->prev = md->prev; // linking next chunk to previous chunk
-        if (next_md->is_free) {
+        if (next_md->is_allocated) {
 
           // case 3 as discribed in the README
           prev_md->length += next_md->length + sizeof(metadata);
@@ -149,7 +149,7 @@ void myfree(void *ptr, char *file, int line) {
       }
     } else if (md->next != 0) { // checking if next chunk is free
       metadata *next_md = get_metadata(heap.bytes + md->next*8);
-      if (next_md->is_free) {
+      if (next_md->is_allocated) {
 
         // case 2 as discribed in the README
         md->length += next_md->length + sizeof(metadata); // extending length of chunk
