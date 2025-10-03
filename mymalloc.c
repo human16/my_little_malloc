@@ -16,6 +16,18 @@ typedef struct {
   unsigned char padding; // unused
 } metadata;
 
+void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_free) {
+    md->prev = prev;
+    md->next = next;
+    md->length = length;
+    md->is_free = is_free;
+    md->padding = 0;
+}
+
+metadata *get_metadata(char *pointer) {
+    return (metadata *)pointer;
+}
+
 static int heap_initalized = 0;
 
 void * initialize_heap() {
@@ -26,11 +38,8 @@ void * initialize_heap() {
   // atexit(check_for_leaks);
 
   // get pointer to start of the heap and write initial metadata for the single free chunk
-  metadata *head = (metadata *)&heap.bytes;
-  head->prev = 0;
-  head->next = 0;
-  head->length = MEMLENGTH - sizeof(metadata);
-  head->is_allocated = 1;
+  metadata *head = get_metadata(heap.bytes);
+  create_metadata(head, 0, 0, MEMLENGTH - sizeof(metadata), 0);
 
   printf("Heap initialized...\n");
   printf("Metadata size: %zu bytes\n", sizeof(metadata));
