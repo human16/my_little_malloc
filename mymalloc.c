@@ -16,11 +16,11 @@ typedef struct {
   unsigned char padding; // unused
 } metadata;
 
-void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_free) {
+void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_allocated) {
     md->prev = prev;
     md->next = next;
     md->length = length;
-    md->is_free = is_free;
+    md->is_allocated = is_allocated;
     md->padding = 0;
 }
 
@@ -108,5 +108,60 @@ void * mymalloc(size_t size, char *file, int line) {
 
 
 void myfree(void *ptr, char *file, int line) {
+  if (!ptr) return;
+  if (!heap_initalized) {
+    initialize_heap();
+  }
+  metadata *md = get_metadata(ptr-sizeof(metadata));
+  if (md->is_allocated) {
+    printf("Freeing a free chunk at %p in file %s line %d", ptr, file, line);
+    return; // ADD ATEXIT TO REPORT ERROR
+  }
+  md -> is_allocated = 1;
+  
+
+  // coalescing free chunks
+
+  // checking if prev chunk is free
+  if (md->prev != 0) {
+    metadata *prev_md = get_metadata(heap.bytes + md->prev*8);
+    if (prev_md->is_allocated) {
+
+      // case 1 as discribed in the README
+      prev_md->length += md->length + sizeof(metadata); 
+      prev_md->next = md->next; // linking current chunk to next chunk
+      if (md->next != 0) {
+
+        // making sure the current chunk is not the last chunk
+        metadata *next_md = get_metadata(heap.bytes + md->next*8);
+        next_md->prev = md->prev; // linking next chunk to previous chunk
+        if (next_md->is_allocated) {
+
+          // case 3 as discribed in the README
+          prev_md->length += next_md->length + sizeof(metadata);
+          prev_md->next = next_md->next; // linking previous chunk to next next chunk
+          if (next_md->next != 0) {
+
+            metadata *next_next_md = get_metadata(heap.bytes + next_md->next*8);
+            next_next_md->prev = md->prev; // linking next next chunk to previous chunk
+          }
+        }
+      }
+    } else if (md->next != 0) { // checking if next chunk is free
+      metadata *next_md = get_metadata(heap.bytes + md->next*8);
+      if (next_md->is_allocated) {
+
+        // case 2 as discribed in the README
+        md->length += next_md->length + sizeof(metadata); // extending length of chunk
+        md->next = next_md->next; // linking current chunk to next next chunk
+        if (next_md->next != 0) {
+
+          metadata *next_next_md = get_metadata(heap.bytes + next_md->next*8);
+          next_next_md->prev = (md - heap.bytes)/8; // linking next next chunk to current chunk
+        }
+      }
+    }
+  }
+
 
 }
