@@ -12,7 +12,7 @@ typedef struct {
   unsigned short prev;
   unsigned short next;
   unsigned short length;
-  unsigned char is_free;
+  unsigned char is_allocated;
   unsigned char padding; // unused
 } metadata;
 
@@ -55,14 +55,58 @@ void check_for_leaks() {
 }
 
 void * mymalloc(size_t size, char *file, int line) {
+  if (!heap_initalized) {
+    initialize_heap();
+  }
 
+  size_t size_rounded = size;
+  if (size % 8 != 0) {
+    size_rounded = size + (8 - (size % 8));
+  }
+
+  metadata *curr = (metadata *)&heap.bytes[0];
+
+  while (1) {
+    if (curr->is_allocated && curr->length >= size_rounded) {
+
+      // check if we should split the block
+      size_t remaining = curr->length - size_rounded;
+      if (remaining >= sizeof(metadata) + 8) {
+        metadata *new_block = (metadata *)((char *)(curr + 1) + size_rounded);
+        new_block->prev = (char *)curr - heap.bytes;
+        new_block->next = curr->next;
+        new_block->length = remaining - sizeof(metadata);
+        new_block->is_allocated = 1;
+
+        // update curr
+        curr->length = size_rounded;
+        curr->next = (char *)new_block - heap.bytes;
+
+        // update next block prev pointer if it exists
+        if (new_block->next != 0) {
+          metadata *next = (metadata *)&heap.bytes[new_block->next];
+          next->prev = (char *)new_block - heap.bytes;
+        }
+      }
+
+      curr->is_allocated = 0;
+
+      return (void *)(curr + 1);
+    }
+
+    // next block
+    if (curr->next == 0) {
+      fprintf(stderr, "Error in %s line %d: malloc of %zu bytes failed\n", file, line, size);
+      return NULL;
+    }
+
+    curr = (metadata *)&heap.bytes[curr->next];
+  }
+
+  return NULL;
 }
 
 
 void myfree(void *ptr, char *file, int line) {
 
-}
-
-int main(void) {
-  initialize_heap();
 }
