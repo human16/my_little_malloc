@@ -32,7 +32,7 @@ metadata *get_metadata(char *pointer) {
 
 static int heap_initalized = 0;
 
-void * initialize_heap() {
+void initialize_heap() {
   // toggle heap initialization flag 
   heap_initalized = 1;
 
@@ -132,19 +132,19 @@ void myfree(void *ptr, char *file, int line) {
     initialize_heap();
   }
   if (ptr < (void *)heap.bytes || ptr >= (void *)(heap.bytes + MEMLENGTH)) {
-    printf("free: Inappropriate pointer (%s:%d)", file, line);
+    fprintf(stderr, "free: Inappropriate pointer (%s:%d)", file, line);
     atexit(check_for_leaks);
     return;
   }
 
   if (!pointer_validity(ptr)) {
-    printf("free: Invalid pointer (%s:%d)"), file, line;
+    fprintf(stderr, "free: Invalid pointer (%s:%d)", file, line);
     atexit(check_for_leaks);
   }
 
   metadata *md = get_metadata(ptr);
   if (md->is_allocated) {
-    printf("free: Double free (%s:%d)", file, line);
+    fprintf(stderr, "free: Double free (%s:%d)", file, line);
     atexit(check_for_leaks);
     return;
   }
@@ -188,7 +188,7 @@ void myfree(void *ptr, char *file, int line) {
         if (next_md->next != 0) {
 
           metadata *next_next_md = get_metadata(heap.bytes + next_md->next*8);
-          next_next_md->prev = (md - heap.bytes)/8; // linking next next chunk to current chunk
+          next_next_md->prev = md->prev; // linking next next chunk to current chunk
         }
       }
     }
