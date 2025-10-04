@@ -50,11 +50,13 @@ void initialize_heap() {
   metadata *head = get_metadata(heap.bytes + sizeof(metadata));
   create_metadata(head, 0, 0, MEMLENGTH - sizeof(metadata), 0);
 
-  printf("Heap initialized...\n");
-  printf("Metadata size: %zu bytes\n", sizeof(metadata));
-  printf("Initial free chunk size: %u bytes\n", head->length);
-  printf("Heap starts at: %p\n", (void*)head);
-  printf("Payload starts at: %p\n", (void*)(head+1));
+  if (DEBUG) {
+    printf("| Debug: Heap initialized...\n");
+    printf("| Debug: Metadata size: %zu bytes\n", sizeof(metadata));
+    printf("| Debug: Initial free chunk size: %u bytes\n", head->length);
+    printf("| Debug: Heap starts at: %p\n", (void*)head);
+    printf("| Debug: Payload starts at: %p\n", (void*)(head+1));
+  } 
 }
 
 void check_for_leaks() {
