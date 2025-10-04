@@ -15,7 +15,7 @@ make clean:     Will clean the files created by make. Gotta love organization ðŸ
 
 make debug:     Will run the program with DEBUG=1, this allows us to shove extra monitoring into mymalloc.c and monitor more components of the program while it runs.
                 In mymalloc.c, we can add if statements that will only run if DEBUG==1, that's how we insert tests.
-                Test comments should follow the format "| Debug: ________"
+                Test comments should follow the format "| *Function*: ________"
 
 #########
 METADATA:

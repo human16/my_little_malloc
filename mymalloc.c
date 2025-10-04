@@ -21,9 +21,7 @@ typedef struct {
 } metadata;
 
 void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_allocated) {
-    
-  md -= 1; // move back to the beginning of the metadata block as opposed to the beginning of the data
-  md->prev = prev;
+    md->prev = prev;
     md->next = next;
     md->length = length;
     md->is_allocated = is_allocated;
@@ -38,7 +36,7 @@ static int heap_initalized = 0;
 
 void initialize_heap() {
   if (DEBUG) {
-    printf("| Debug: Initializing heap\n");
+    printf("| Initialize_heap: Initializing heap\n");
   }
   // toggle heap initialization flag 
   heap_initalized = 1;
@@ -47,15 +45,15 @@ void initialize_heap() {
   // atexit(check_for_leaks);
 
   // get pointer to start of the heap and write initial metadata for the single free chunk
-  metadata *head = get_metadata(heap.bytes + sizeof(metadata));
+  metadata *head = get_metadata(heap.bytes);
   create_metadata(head, 0, 0, MEMLENGTH - sizeof(metadata), 0);
 
   if (DEBUG) {
-    printf("| Debug: Heap initialized...\n");
-    printf("| Debug: Metadata size: %zu bytes\n", sizeof(metadata));
-    printf("| Debug: Initial free chunk size: %u bytes\n", head->length);
-    printf("| Debug: Heap starts at: %p\n", (void*)head);
-    printf("| Debug: Payload starts at: %p\n", (void*)(head+1));
+    printf("| Initialize_heap: Heap initialized...\n");
+    printf("| Initialize_heap: Metadata size: %zu bytes\n", sizeof(metadata));
+    printf("| Initialize_heap: Initial free chunk size: %u bytes\n", head->length);
+    printf("| Initialize_heap: Heap starts at: %p\n", (void*)head);
+    printf("| Initialize_heap: Payload starts at: %p\n", (void*)head+8);
   } 
 }
 
@@ -75,11 +73,20 @@ void * mymalloc(size_t size, char *file, int line) {
     size_rounded = size + (8 - (size % 8));
   }
 
-  metadata *curr = (metadata *)&heap.bytes[0];
+  metadata *curr = (metadata *)heap.bytes;
+  if (DEBUG) {
+    printf("| Malloc: current metadata at: %p is: prev: %d, next: %d, length: %d, is_allocated: %d\n", (void*)curr, curr->prev, curr->next, curr->length, curr->is_allocated);
+  }
 
   while (1) {
-    if (curr->is_allocated && curr->length >= size_rounded) {
+    if (DEBUG) {
+    printf("| Malloc: Curr block: \n    prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n   looking for %ld bytes\n\n", curr->prev, curr->next, curr->length, curr->is_allocated, size_rounded);
+    }
 
+    if (!curr->is_allocated && curr->length >= size_rounded) {
+      if (DEBUG) {
+        printf("| Malloc: Block found at: %p\n", (void*)curr + 8);
+      }
       // check if we should split the block
       size_t remaining = curr->length - size_rounded;
       if (remaining >= sizeof(metadata) + 8) {
@@ -87,7 +94,7 @@ void * mymalloc(size_t size, char *file, int line) {
         new_block->prev = (char *)curr - heap.bytes;
         new_block->next = curr->next;
         new_block->length = remaining - sizeof(metadata);
-        new_block->is_allocated = 1;
+        new_block->is_allocated = 0;
 
         // update curr
         curr->length = size_rounded;
@@ -100,7 +107,7 @@ void * mymalloc(size_t size, char *file, int line) {
         }
       }
 
-      curr->is_allocated = 0;
+      curr->is_allocated = 1;
 
       return (void *)(curr + 1);
     }
@@ -108,6 +115,9 @@ void * mymalloc(size_t size, char *file, int line) {
     // next block
     if (curr->next == 0) {
       fprintf(stderr, "Error in %s line %d: malloc of %zu bytes failed\n", file, line, size);
+      if (DEBUG) {
+        printf("| Malloc: Last block reached at: %p\n", (void*)curr + 8);
+      }
       return NULL;
     }
 
@@ -136,28 +146,32 @@ char pointer_validity(void *ptr) {
 }
 
 void myfree(void *ptr, char *file, int line) {
+
   if (!ptr) return;
   if (!heap_initalized) {
     initialize_heap();
   }
   if (ptr < (void *)heap.bytes || ptr >= (void *)(heap.bytes + MEMLENGTH)) {
-    fprintf(stderr, "free: Inappropriate pointer (%s:%d)", file, line);
-    atexit(check_for_leaks);
-    return;
+    fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
+    exit(1);
   }
 
   if (!pointer_validity(ptr)) {
-    fprintf(stderr, "free: Invalid pointer (%s:%d)", file, line);
-    atexit(check_for_leaks);
+    fprintf(stderr, "free: Invalid pointer (%s:%d)\n", file, line);
+    exit(1);
   }
 
-  metadata *md = get_metadata(ptr);
-  if (md->is_allocated) {
-    fprintf(stderr, "free: Double free (%s:%d)", file, line);
-    atexit(check_for_leaks);
-    return;
+  metadata *md = get_metadata(ptr-8);
+  if (DEBUG) {
+    printf("| Free: Freeing pointer: %p\n", ptr);
+    printf("| Free: metadata:\n   prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n\n", md->prev, md->next, md->length, md->is_allocated);
   }
-  md -> is_allocated = 1;
+
+  if (!md->is_allocated) {
+    fprintf(stderr, "free: Double free (%s:%d)\n", file, line);
+    exit(1);
+  }
+  md->is_allocated = 1;
   
 
   // coalescing free chunks
