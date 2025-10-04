@@ -3,6 +3,10 @@
 #include "mymalloc.h"
 #define MEMLENGTH 4096
 
+#ifndef DEBUG
+#define DEBUG 0
+#endif
+
 static union {
 char bytes[MEMLENGTH];
 double not_used;
@@ -33,6 +37,9 @@ metadata *get_metadata(char *pointer) {
 static int heap_initalized = 0;
 
 void initialize_heap() {
+  if (DEBUG) {
+    printf("| Debug: Initializing heap\n");
+  }
   // toggle heap initialization flag 
   heap_initalized = 1;
 
