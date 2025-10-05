@@ -4,6 +4,9 @@ CFLAGS = -g -Wall -Wvla -std=c99 -fsanitize=address,undefined
 memtest: memtest.o mymalloc.o
 	$(CC) $(CFLAGS) $^ -o $@
 
+test: tests.o mymalloc.o
+	$(CC) $(CFLAGS) $^ -o test
+
 debug: memtest.o debug_mymalloc.o
 	$(CC) $(CFLAGS) $^ -o memtest-debug
 
@@ -15,7 +18,8 @@ debug_mymalloc.o: mymalloc.c mymalloc.h
 
 memtest.o: mymalloc.h
 mymalloc.o: mymalloc.h
+tests.o: mymalloc.h
 
 clean:
-	rm -f *.o memtest memtest-debug debug_mymalloc.o
+	rm -f *.o test memtest memtest-debug 
 

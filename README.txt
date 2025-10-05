@@ -3,6 +3,20 @@ netid: by240, elp95
 
 Plan:
 
+########
+DEBUGING:
+########
+
+Included in the make files are 3 important options:
+
+make memtest:   The regular option that will compile everything without any debugging flag
+
+make clean:     Will clean the files created by make. Gotta love organization 😍
+
+make debug:     Will run the program with DEBUG=1, this allows us to shove extra monitoring into mymalloc.c and monitor more components of the program while it runs.
+                In mymalloc.c, we can add if statements that will only run if DEBUG==1, that's how we insert tests.
+                Test comments should follow the format "| *Function*: ________"
+
 #########
 METADATA:
 #########
@@ -107,3 +121,15 @@ if an object that is already free is freed again or out of bounds free, crash ou
 
 more details will be added as time goes on.
 
+
+################################################################################################
+################################################################################################
+
+
+Testing:
+
+Testing will be conducted through the file tests.c
+Each test will be a different function and when running "make test" the resulting binary will run all tests.
+
+test 1:
+    create two objects and then free them. Easy
