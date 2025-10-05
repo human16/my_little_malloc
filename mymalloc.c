@@ -34,6 +34,28 @@ metadata *get_metadata(char *pointer) {
 
 static int heap_initalized = 0;
 
+void visualize_heap() {
+  metadata *curr = get_metadata(heap.bytes);
+  int block_num = 0;
+  while (1) {
+    if (curr->is_allocated) {
+      for (int i = 0; i < curr->length/8; i++) {
+        printf("0"); 
+      } 
+    } else {
+      for (int i = 0; i < curr->length/8; i++) {
+        printf("-");
+      }
+    }
+    block_num++;
+    if (curr->next == 0) {
+      break;
+    }
+    curr = get_metadata(heap.bytes + curr->next);
+  }
+  printf("\n");
+}
+
 void initialize_heap() {
   if (DEBUG) {
     printf("| Initialize_heap: Initializing heap\n");
@@ -75,17 +97,17 @@ void * mymalloc(size_t size, char *file, int line) {
 
   metadata *curr = (metadata *)heap.bytes;
   if (DEBUG) {
-    printf("| Malloc: current metadata at: %p is: prev: %d, next: %d, length: %d, is_allocated: %d\n", (void*)curr, curr->prev, curr->next, curr->length, curr->is_allocated);
+    //printf("| Malloc: current metadata at: %p is: prev: %d, next: %d, length: %d, is_allocated: %d\n", (void*)curr, curr->prev, curr->next, curr->length, curr->is_allocated);
   }
 
   while (1) {
     if (DEBUG) {
-    printf("| Malloc: Curr block: \n    prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n   looking for %ld bytes\n\n", curr->prev, curr->next, curr->length, curr->is_allocated, size_rounded);
+      //printf("| Malloc: Curr block: \n    prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n   looking for %ld bytes\n\n", curr->prev, curr->next, curr->length, curr->is_allocated, size_rounded);
     }
 
     if (!curr->is_allocated && curr->length >= size_rounded) {
       if (DEBUG) {
-        printf("| Malloc: Block found at: %p\n", (void*)curr + 8);
+        //printf("| Malloc: Block found at: %p\n prev: %d\n next: %d\n length: %d\n is_allocated: %d\n looking for %ld bytes\n\n", (void*)curr + 8, curr->prev, curr->next, curr->length, curr->is_allocated, size_rounded);
       }
       // check if we should split the block
       size_t remaining = curr->length - size_rounded;
@@ -120,10 +142,10 @@ void * mymalloc(size_t size, char *file, int line) {
       }
       return NULL;
     }
-
+    
+    
     curr = (metadata *)&heap.bytes[curr->next];
   }
-
   return NULL;
 }
 
@@ -171,40 +193,64 @@ void myfree(void *ptr, char *file, int line) {
     fprintf(stderr, "free: Double free (%s:%d)\n", file, line);
     exit(1);
   }
-  md->is_allocated = 1;
+  md->is_allocated = 0;
   
 
   // coalescing free chunks
 
   // checking if prev chunk is free
   if (md->prev != 0) {
-    metadata *prev_md = get_metadata(heap.bytes + md->prev*8);
-    if (prev_md->is_allocated) {
-
+    metadata *prev_md = get_metadata(heap.bytes + md->prev);
+    if (!prev_md->is_allocated) {
+      if (DEBUG) {
+        printf("| Free: Prev block free\n");
+        printf("| Free: Prev metadata:\n   prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n\n", prev_md->prev, prev_md->next, prev_md->length, prev_md->is_allocated);
+      }
       // case 1 as discribed in the README
       prev_md->length += md->length + sizeof(metadata); 
       prev_md->next = md->next; // linking current chunk to next chunk
       if (md->next != 0) {
 
         // making sure the current chunk is not the last chunk
-        metadata *next_md = get_metadata(heap.bytes + md->next*8);
+        metadata *next_md = get_metadata(heap.bytes + md->next);
         next_md->prev = md->prev; // linking next chunk to previous chunk
-        if (next_md->is_allocated) {
-
+        if (!next_md->is_allocated) {
+          if (DEBUG) {
+            printf("| Free: Next block free\n");
+            printf("| Free: Next metadata:\n   prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n\n", next_md->prev, next_md->next, next_md->length, next_md->is_allocated);
+          }
+          
           // case 3 as discribed in the README
           prev_md->length += next_md->length + sizeof(metadata);
+          if (DEBUG) {
+              printf("line 201\n");
+            }
           prev_md->next = next_md->next; // linking previous chunk to next next chunk
+          if (DEBUG) {
+              printf("line 205\n");
+            }
           if (next_md->next != 0) {
-
-            metadata *next_next_md = get_metadata(heap.bytes + next_md->next*8);
+            if (DEBUG) {
+              printf("line 209\n");
+            }
+            metadata *next_next_md = get_metadata(heap.bytes + next_md->next);
+            if (DEBUG) {
+              printf("line 213\n");
+              printf("| Free: Next Next metadata: %p\n,  Next metadata: %p", next_next_md, next_md);
+            }
             next_next_md->prev = md->prev; // linking next next chunk to previous chunk
-          }
-        }
+            if (DEBUG) {
+              printf("line 219\n");
+            }
+          }        }
       }
     } else if (md->next != 0) { // checking if next chunk is free
-      metadata *next_md = get_metadata(heap.bytes + md->next*8);
-      if (next_md->is_allocated) {
-
+      metadata *next_md = get_metadata(heap.bytes + md->next);
+      if (!next_md->is_allocated) {
+        if (DEBUG) {
+          printf("| Free: Next block free\n");
+          printf("| Free: Next metadata:\n   prev: %d,\n    next: %d,\n    length: %d,\n    is_allocated: %d\n\n", next_md->prev, next_md->next, next_md->length, next_md->is_allocated);
+        }
         // case 2 as discribed in the README
         md->length += next_md->length + sizeof(metadata); // extending length of chunk
         md->next = next_md->next; // linking current chunk to next next chunk
@@ -216,6 +262,8 @@ void myfree(void *ptr, char *file, int line) {
       }
     }
   }
-
+  if (DEBUG) {
+    visualize_heap();
+  }
 
 }
