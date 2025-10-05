@@ -121,3 +121,15 @@ if an object that is already free is freed again or out of bounds free, crash ou
 
 more details will be added as time goes on.
 
+
+################################################################################################
+################################################################################################
+
+
+Testing:
+
+Testing will be conducted through the file tests.c
+Each test will be a different function and when running "make test" the resulting binary will run all tests.
+
+test 1:
+    create two objects and then free them. Easy

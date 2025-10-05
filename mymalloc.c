@@ -56,7 +56,23 @@ void visualize_heap() {
   printf("\n");
 }
 
+void check_for_leaks() {
+  // traverse heap and report a leak
+  // a leak occurs when there is a chunk marked "allocated" on the heap
+  metadata *curr_metadata = get_metadata(heap.bytes);
+  while (1) {
+    if (curr_metadata->is_allocated) {
+      fprintf(stderr, "Memory leak detected: chunk at %p of size %u bytes not freed\n", (void *)(curr_metadata + 1), curr_metadata->length);
+    }
+    if (curr_metadata->next == 0) {
+      return ;
+    }
+    curr_metadata = get_metadata(heap.bytes + curr_metadata->next);
+  }
+}
+
 void initialize_heap() {
+  atexit(check_for_leaks);
   if (DEBUG) {
     printf("| Initialize_heap: Initializing heap\n");
   }
@@ -77,12 +93,6 @@ void initialize_heap() {
     printf("| Initialize_heap: Heap starts at: %p\n", (void*)head);
     printf("| Initialize_heap: Payload starts at: %p\n", (void*)head+8);
   } 
-}
-
-void check_for_leaks() {
-  // traverse heap and report a leak
-  // a leak occurs when there is a chunk marked "allocated" on the heap
-
 }
 
 void * mymalloc(size_t size, char *file, int line) {
@@ -154,8 +164,6 @@ char pointer_validity(void *ptr) {
     }
     curr_metadata = get_metadata(heap.bytes + curr_metadata->next);
   }
-
-
 }
 
 void myfree(void *ptr, char *file, int line) {
@@ -164,21 +172,25 @@ void myfree(void *ptr, char *file, int line) {
   if (!heap_initalized) {
     initialize_heap();
   }
+
+  // Making sure the pointer is within the range of the heap
   if (ptr < (void *)heap.bytes || ptr >= (void *)(heap.bytes + MEMLENGTH)) {
     fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
-    exit(1);
+    exit(2);
   }
 
+  // Making sure the pointer points to the start of a payload
   if (!pointer_validity(ptr)) {
     fprintf(stderr, "free: Invalid pointer (%s:%d)\n", file, line);
-    exit(1);
+    exit(2);
   }
 
   metadata *md = get_metadata(ptr-8);
 
+  // Checking for double free
   if (!md->is_allocated) {
     fprintf(stderr, "free: Double free (%s:%d)\n", file, line);
-    exit(1);
+    exit(2);
   }
   md->is_allocated = 0;
   
