@@ -21,9 +21,7 @@ typedef struct {
 } metadata;
 
 void create_metadata(metadata *md, unsigned short prev, unsigned short next, unsigned short length, unsigned char is_allocated) {
-    
-  md -= 1; // move back to the beginning of the metadata block as opposed to the beginning of the data
-  md->prev = prev;
+    md->prev = prev;
     md->next = next;
     md->length = length;
     md->is_allocated = is_allocated;
@@ -36,9 +34,31 @@ metadata *get_metadata(char *pointer) {
 
 static int heap_initalized = 0;
 
+void visualize_heap() {
+  metadata *curr = get_metadata(heap.bytes);
+  int block_num = 0;
+  while (1) {
+    if (curr->is_allocated) {
+      for (int i = 0; i < curr->length/8; i++) {
+        printf("0"); 
+      } 
+    } else {
+      for (int i = 0; i < curr->length/8; i++) {
+        printf("-");
+      }
+    }
+    block_num++;
+    if (curr->next == 0) {
+      break;
+    }
+    curr = get_metadata(heap.bytes + curr->next);
+  }
+  printf("\n");
+}
+
 void initialize_heap() {
   if (DEBUG) {
-    printf("| Debug: Initializing heap\n");
+    printf("| Initialize_heap: Initializing heap\n");
   }
   // toggle heap initialization flag 
   heap_initalized = 1;
@@ -47,14 +67,16 @@ void initialize_heap() {
   // atexit(check_for_leaks);
 
   // get pointer to start of the heap and write initial metadata for the single free chunk
-  metadata *head = get_metadata(heap.bytes + sizeof(metadata));
+  metadata *head = get_metadata(heap.bytes);
   create_metadata(head, 0, 0, MEMLENGTH - sizeof(metadata), 0);
 
-  printf("Heap initialized...\n");
-  printf("Metadata size: %zu bytes\n", sizeof(metadata));
-  printf("Initial free chunk size: %u bytes\n", head->length);
-  printf("Heap starts at: %p\n", (void*)head);
-  printf("Payload starts at: %p\n", (void*)(head+1));
+  if (DEBUG) {
+    printf("| Initialize_heap: Heap initialized...\n");
+    printf("| Initialize_heap: Metadata size: %zu bytes\n", sizeof(metadata));
+    printf("| Initialize_heap: Initial free chunk size: %u bytes\n", head->length);
+    printf("| Initialize_heap: Heap starts at: %p\n", (void*)head);
+    printf("| Initialize_heap: Payload starts at: %p\n", (void*)head+8);
+  } 
 }
 
 void check_for_leaks() {
@@ -73,11 +95,11 @@ void * mymalloc(size_t size, char *file, int line) {
     size_rounded = size + (8 - (size % 8));
   }
 
-  metadata *curr = (metadata *)&heap.bytes[0];
+  metadata *curr = (metadata *)heap.bytes;
 
   while (1) {
-    if (curr->is_allocated && curr->length >= size_rounded) {
 
+    if (!curr->is_allocated && curr->length >= size_rounded) {
       // check if we should split the block
       size_t remaining = curr->length - size_rounded;
       if (remaining >= sizeof(metadata) + 8) {
@@ -85,7 +107,7 @@ void * mymalloc(size_t size, char *file, int line) {
         new_block->prev = (char *)curr - heap.bytes;
         new_block->next = curr->next;
         new_block->length = remaining - sizeof(metadata);
-        new_block->is_allocated = 1;
+        new_block->is_allocated = 0;
 
         // update curr
         curr->length = size_rounded;
@@ -98,7 +120,7 @@ void * mymalloc(size_t size, char *file, int line) {
         }
       }
 
-      curr->is_allocated = 0;
+      curr->is_allocated = 1;
 
       return (void *)(curr + 1);
     }
@@ -106,12 +128,15 @@ void * mymalloc(size_t size, char *file, int line) {
     // next block
     if (curr->next == 0) {
       fprintf(stderr, "Error in %s line %d: malloc of %zu bytes failed\n", file, line, size);
+      if (DEBUG) {
+        printf("| Malloc: Last block reached at: %p\n", (void*)curr + 8);
+      }
       return NULL;
     }
-
+    
+    
     curr = (metadata *)&heap.bytes[curr->next];
   }
-
   return NULL;
 }
 
@@ -134,36 +159,36 @@ char pointer_validity(void *ptr) {
 }
 
 void myfree(void *ptr, char *file, int line) {
+
   if (!ptr) return;
   if (!heap_initalized) {
     initialize_heap();
   }
   if (ptr < (void *)heap.bytes || ptr >= (void *)(heap.bytes + MEMLENGTH)) {
-    fprintf(stderr, "free: Inappropriate pointer (%s:%d)", file, line);
-    atexit(check_for_leaks);
-    return;
+    fprintf(stderr, "free: Inappropriate pointer (%s:%d)\n", file, line);
+    exit(1);
   }
 
   if (!pointer_validity(ptr)) {
-    fprintf(stderr, "free: Invalid pointer (%s:%d)", file, line);
-    atexit(check_for_leaks);
+    fprintf(stderr, "free: Invalid pointer (%s:%d)\n", file, line);
+    exit(1);
   }
 
-  metadata *md = get_metadata(ptr);
-  if (md->is_allocated) {
-    fprintf(stderr, "free: Double free (%s:%d)", file, line);
-    atexit(check_for_leaks);
-    return;
+  metadata *md = get_metadata(ptr-8);
+
+  if (!md->is_allocated) {
+    fprintf(stderr, "free: Double free (%s:%d)\n", file, line);
+    exit(1);
   }
-  md -> is_allocated = 1;
+  md->is_allocated = 0;
   
 
   // coalescing free chunks
 
   // checking if prev chunk is free
   if (md->prev != 0) {
-    metadata *prev_md = get_metadata(heap.bytes + md->prev*8);
-    if (prev_md->is_allocated) {
+    metadata *prev_md = get_metadata(heap.bytes + md->prev);
+    if (!prev_md->is_allocated) {
 
       // case 1 as discribed in the README
       prev_md->length += md->length + sizeof(metadata); 
@@ -171,24 +196,23 @@ void myfree(void *ptr, char *file, int line) {
       if (md->next != 0) {
 
         // making sure the current chunk is not the last chunk
-        metadata *next_md = get_metadata(heap.bytes + md->next*8);
+        metadata *next_md = get_metadata(heap.bytes + md->next);
         next_md->prev = md->prev; // linking next chunk to previous chunk
-        if (next_md->is_allocated) {
+        if (!next_md->is_allocated) {
 
           // case 3 as discribed in the README
           prev_md->length += next_md->length + sizeof(metadata);
           prev_md->next = next_md->next; // linking previous chunk to next next chunk
-          if (next_md->next != 0) {
 
-            metadata *next_next_md = get_metadata(heap.bytes + next_md->next*8);
+          if (next_md->next != 0) {
+            metadata *next_next_md = get_metadata(heap.bytes + next_md->next);
             next_next_md->prev = md->prev; // linking next next chunk to previous chunk
           }
         }
       }
     } else if (md->next != 0) { // checking if next chunk is free
-      metadata *next_md = get_metadata(heap.bytes + md->next*8);
-      if (next_md->is_allocated) {
-
+      metadata *next_md = get_metadata(heap.bytes + md->next);
+      if (!next_md->is_allocated) {
         // case 2 as discribed in the README
         md->length += next_md->length + sizeof(metadata); // extending length of chunk
         md->next = next_md->next; // linking current chunk to next next chunk
@@ -200,6 +224,12 @@ void myfree(void *ptr, char *file, int line) {
       }
     }
   }
-
-
+  if (DEBUG) {
+    //helps visualize the heap after running free, but extremely obnoxious
+    /*
+    printf("| Free: Pointer %p freed\n", ptr);
+    visualize_heap();
+    printf("\n");
+    */
+  }
 }
