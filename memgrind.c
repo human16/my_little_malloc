@@ -64,6 +64,38 @@ int third_test() {
 }
 
 
+struct Node {
+    struct Node *next;
+    int data;
+};
+
+int fourth_test() {
+    struct Node *curr = malloc(sizeof(struct Node));
+    if (curr == NULL) {
+        return EXIT_FAILURE;
+    }
+    curr->next = NULL;
+    curr->data = 0;
+    struct Node *first_node = curr;
+    for (int i = 1; i < 120; i++) {
+        struct Node *next_node = malloc(sizeof(struct Node));
+        if (next_node == NULL) {
+            return EXIT_FAILURE;
+        }
+        next_node->data = i;
+        next_node->next = curr;
+        curr = next_node;
+    }
+    curr = first_node;
+    while (curr != NULL) {
+        first_node = curr->next;
+        free(curr);
+        curr = first_node;
+    }
+    return EXIT_SUCCESS;
+}
+
+
 int run_test(int (*test)(), int iterations, int test_num) {
     struct timeval init_time, end_time;
     gettimeofday(&init_time, NULL);
@@ -83,5 +115,6 @@ int main(int argc, char **argv) {
     run_test(first_test, 50, 1);
     run_test(second_test, 50, 2);
     run_test(third_test, 50, 3);
+    //run_test(fourth_test, 2, 4);
     return EXIT_SUCCESS;
 }

@@ -12,11 +12,13 @@ To run it with debugging, use  `make debug`, which will generate a file which wi
 
 To run tests regularly, use `make test`, which will generate a file which will run with `./test`
 
-To run it with debugging, use `make debug-test`, which will generate a file which will run with `debug-test`
+To run it with debugging, use `make debug-test`, which will generate a file which will run with `./debug-test`
 
 ## memgrind
 
 To run memgrind regularly, use `make memgrind`, which will generate a file whihc will run with `./memgrind`
+
+To run it with debugging, use `make debug-memgrind`, which will generate a file which will run with `./debug-memgrind`
 
 # Plan:
 
