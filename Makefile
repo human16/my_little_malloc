@@ -1,14 +1,14 @@
 CC = gcc
 CFLAGS = -g -Wall -Wvla -std=c99 -fsanitize=address,undefined
 
+memgrind: memgrind.o mymalloc.o
+	$(CC) $(CFLAGS) $^ -o memgrind
+
 memtest: memtest.o mymalloc.o
 	$(CC) $(CFLAGS) $^ -o $@
 
 test: tests.o mymalloc.o
 	$(CC) $(CFLAGS) $^ -o test
-
-memgrind: memgrind.o mymalloc.o
-	$(CC) $(CFLAGS) $^ -o memgrind
 
 debug-memgrind: memgrind.o debug_mymalloc.o
 	$(CC) $(CFLAGS) $^ -o debug-memgrind
