@@ -97,11 +97,6 @@ static void initialize_heap() {
 }
 
 void * mymalloc(size_t size, char *file, int line) {
-  if (DEBUG) {
-    printf("| Malloc: Requesting %zu bytes\n", size);
-    visualize_heap();
-    printf("\n");
-  }
   if (!heap_initalized) {
     initialize_heap();
   }
@@ -138,6 +133,11 @@ void * mymalloc(size_t size, char *file, int line) {
 
       curr->is_allocated = 1;
 
+      if (DEBUG) {
+        printf("| Malloc: Allocated %zu bytes at %p\n", size_rounded, (void *)(curr + 1));
+        visualize_heap();
+        printf("\n");
+      }
       return (void *)(curr + 1);
     }
 
@@ -152,6 +152,9 @@ void * mymalloc(size_t size, char *file, int line) {
     
     
     curr = (metadata *)&heap.bytes[curr->next];
+  }
+  if (DEBUG) {
+    printf("| Malloc: failed\n");
   }
   return NULL;
 }
@@ -235,26 +238,39 @@ void myfree(void *ptr, char *file, int line) {
           }
         }
       }
-    } else if (md->next != 0) { // checking if next chunk is free
-      metadata *next_md = get_metadata(heap.bytes + md->next);
-      if (!next_md->is_allocated) {
-        // case 2 as discribed in the README
-        if (DEBUG) {
-          printf("| Free: Coalescing with next chunk\n");
-        }
-        md->length += next_md->length + sizeof(metadata); // extending length of chunk
-        md->next = next_md->next; // linking current chunk to next next chunk
-        if (next_md->next != 0) {
-
-          metadata *next_next_md = get_metadata(heap.bytes + next_md->next);
-          next_next_md->prev = md->prev; // linking next next chunk to current chunk
-        }
+      if (DEBUG) {
+        //helps visualize the heap after running free, but extremely obnoxious
+        printf("| Free: Pointer %p freed\n", ptr);
+        printf("| Free: Metadata: prev: %u, next: %u, length: %u, is_allocated: %u\n", md->prev, md->next, md->length, md->is_allocated);
+        visualize_heap();
+        printf("\n");
+      }
+      return ;
+    }
+   }
+   if (md->next != 0) { // checking if next chunk is free
+    printf("next chunk is free\n");
+    metadata *next_md = get_metadata(heap.bytes + md->next);
+    if (!next_md->is_allocated) {
+      // case 2 as discribed in the README
+      if (DEBUG) {
+        printf("| Free: Coalescing with next chunk\n");
+      }
+      md->length += next_md->length + sizeof(metadata); // extending length of chunk
+      md->next = next_md->next; // linking current chunk to next next chunk
+      if (DEBUG) {
+        printf("| Free: Current metadata: prev: %u, next: %u, length: %u, is_allocated: %u\n", md->prev, md->next, md->length, md->is_allocated);
+      }
+      if (next_md->next != 0) {
+        metadata *next_next_md = get_metadata(heap.bytes + next_md->next);
+        next_next_md->prev = md->prev; // linking next next chunk to current chunk
       }
     }
-  }
+  } 
   if (DEBUG) {
     //helps visualize the heap after running free, but extremely obnoxious
     printf("| Free: Pointer %p freed\n", ptr);
+    printf("| Free: Metadata: prev: %u, next: %u, length: %u, is_allocated: %u\n", md->prev, md->next, md->length, md->is_allocated);
     visualize_heap();
     printf("\n");
   }

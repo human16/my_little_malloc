@@ -92,7 +92,7 @@ int test7() {
 
 int main(int argc, char **argv) {
   int (*tests[])() = {
-    test1, test2, //test5, test6, test7, 
+    test6, test7, 
   };
   double num_tests = sizeof(tests) / sizeof(tests[0]);
   int num_passed = 0;
