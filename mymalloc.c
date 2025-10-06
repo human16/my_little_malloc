@@ -12,6 +12,8 @@ char bytes[MEMLENGTH];
 double not_used;
 } heap;
 
+static int heap_initialized = 0;
+
 typedef struct {
   unsigned short prev;
   unsigned short next;
@@ -32,9 +34,9 @@ static metadata *get_metadata(char *pointer) {
     return (metadata *)pointer;
 }
 
-static int heap_initalized = 0;
-
 static void visualize_heap() {
+  // This function creates a visual representation of the heap with 0s representing allocated chunks and -s representing free chunks
+  // Each character represents 8 bytes of memory
   metadata *curr = get_metadata(heap.bytes);
   int block_num = 0;
   while (1) {
@@ -78,7 +80,7 @@ static void initialize_heap() {
     printf("| Initialize_heap: Initializing heap\n");
   }
   // toggle heap initialization flag 
-  heap_initalized = 1;
+  heap_initialized = 1;
 
   // register leak detector
   // atexit(check_for_leaks);
@@ -97,7 +99,7 @@ static void initialize_heap() {
 }
 
 void * mymalloc(size_t size, char *file, int line) {
-  if (!heap_initalized) {
+  if (!heap_initialized) {
     initialize_heap();
   }
 
@@ -178,7 +180,7 @@ static char pointer_validity(void *ptr) {
 void myfree(void *ptr, char *file, int line) {
 
   if (!ptr) return;
-  if (!heap_initalized) {
+  if (!heap_initialized) {
     initialize_heap();
   }
 
