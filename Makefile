@@ -7,6 +7,9 @@ memtest: memtest.o mymalloc.o
 test: tests.o mymalloc.o
 	$(CC) $(CFLAGS) $^ -o test
 
+debug-test: tests.o debug_mymalloc.o
+	$(CC) $(CFLAGS) $^ -o debug-test
+
 debug: memtest.o debug_mymalloc.o
 	$(CC) $(CFLAGS) $^ -o memtest-debug
 
@@ -21,5 +24,5 @@ mymalloc.o: mymalloc.h
 tests.o: mymalloc.h
 
 clean:
-	rm -f *.o test memtest memtest-debug 
+	rm -f *.o test memtest memtest-debug debug-test
 
