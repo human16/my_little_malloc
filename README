@@ -1,5 +1,22 @@
 netid: by240, elp95
 
+# How to run everything
+
+## Memtest
+
+To run memtest regularly, use `make memtest`, which will generate a file which will run with `./memtest`
+
+To run it with debugging, use  `make debug`, which will generate a file which will run with `./debug`
+
+## tests
+
+To run tests regularly, use `make test`, which will generate a file which will run with `./test`
+
+To run it with debugging, use `make debug-test`, which will generate a file which will run with `debug-test`
+
+## memgrind
+
+To run memgrind regularly, use `make memgrind`, which will generate a file whihc will run with `./memgrind`
 
 # Plan:
 
@@ -133,3 +150,21 @@ Each test will be a different function and when running "make test" the resultin
 
 ## test 2:
     Try to allocate more space than is available
+
+## test 3:
+    Try to double free
+
+## test4:
+    Pass an invalid pointer to free
+
+## test5:
+    Try to overfill the heap and make sure when allocating 1 byte, 8 will be reserved in the heap.
+
+## test6:
+    Check coalescing case 3
+
+## test7:
+    Check coalescing case 2
+
+## test8:
+    Check coalescing case 1

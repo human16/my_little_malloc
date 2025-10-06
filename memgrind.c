@@ -28,6 +28,41 @@ int second_test() {
     return EXIT_SUCCESS;
 }
 
+int third_test() {
+    char *pointers[120];
+    int number_of_allocs = 0;
+    for (int i = 0; i < 120; i++) {
+        if (rand() % 2 == 0) {
+            pointers[i] = malloc(1);
+            if (pointers[i] == NULL) {
+                return EXIT_FAILURE;
+            }
+            number_of_allocs++;
+        } else {
+            if (number_of_allocs > 0) {
+                int free_number = rand() % number_of_allocs;
+                for (int j = 0; j < i; j++) {
+                    if (pointers[j] != NULL) {
+                        if (free_number == 0) {
+                            free(pointers[j]);
+                            pointers[j] = NULL;
+                            number_of_allocs--;
+                            break;
+                        }
+                        free_number--;
+                    }
+                }
+            }
+        }
+    }
+    for (int i = 0; i < 120; i++) {
+        if (pointers[i] != NULL) {
+            free(pointers[i]);
+        }
+    }
+    return EXIT_SUCCESS;
+}
+
 
 int run_test(int (*test)(), int iterations, int test_num) {
     struct timeval init_time, end_time;
@@ -47,5 +82,6 @@ int run_test(int (*test)(), int iterations, int test_num) {
 int main(int argc, char **argv) {
     run_test(first_test, 50, 1);
     run_test(second_test, 50, 2);
+    run_test(third_test, 50, 3);
     return EXIT_SUCCESS;
 }
