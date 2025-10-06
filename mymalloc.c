@@ -264,7 +264,7 @@ void myfree(void *ptr, char *file, int line) {
       }
       if (next_md->next != 0) {
         metadata *next_next_md = get_metadata(heap.bytes + next_md->next);
-        next_next_md->prev = md->prev; // linking next next chunk to current chunk
+        next_next_md->prev = (char *)md - heap.bytes; // linking next next chunk to current chunk
       }
     }
   } 
