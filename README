@@ -38,7 +38,7 @@ We'll leave the last byte to be whatever, it will not be used.
 metadata = 8 chars (bytes)
 
 `metadata[0,1]`   := prev pointer: a number between 0-511 (can go higher, but will not) that represents the chunk location of the previous chunk
-                    ----first block's previous pointer will be 0.
+                    ----first block's previous pointer will be 1.
                     ----to access the chunk in the heap, we will have to multiply the pointer's value by 8.
 
 `metadata[2,3]`   := next pointer: a number between 0-511 (can go higher, but will not) that represents the chunk location of the next chunk
@@ -70,7 +70,7 @@ If mymalloc is able to reverse unallocated memory we need to return a pointer to
 
 Here is need to write the first header using out 8 byte metadata structure:
 
-`metadata[0,1]`: prev pointer should be set to 0 
+`metadata[0,1]`: prev pointer should be set to 1 
 
 `metadata[2,3]`: next pointer should be set to 0 since there are no next blocks
 

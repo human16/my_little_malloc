@@ -85,7 +85,7 @@ static void initialize_heap() {
 
   // get pointer to start of the heap and write initial metadata for the single free chunk
   metadata *head = get_metadata(heap.bytes);
-  create_metadata(head, 0, 0, MEMLENGTH - sizeof(metadata), 0);
+  create_metadata(head, 1, 0, MEMLENGTH - sizeof(metadata), 0);
 
   if (DEBUG) {
     printf("| Initialize_heap: Heap initialized...\n");
@@ -204,7 +204,7 @@ void myfree(void *ptr, char *file, int line) {
   // coalescing free chunks
 
   // checking if prev chunk is free
-  if (md->prev != 0) {
+  if (md->prev != 1) {
     metadata *prev_md = get_metadata(heap.bytes + md->prev);
     if (!prev_md->is_allocated) {
 
