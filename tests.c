@@ -2,6 +2,25 @@
 #include <stdlib.h>
 #include "mymalloc.h"
 
+
+int test_double_free() { //CHECKED, PASSES
+  //DOUBLE FREE
+  char *obj = malloc(100);
+  if (obj == NULL) {
+    return EXIT_FAILURE;
+  }
+  free(obj);
+  free(obj);
+  return EXIT_FAILURE;
+}
+
+int test_invalid_pointer() { //CHECKED, PASSES AND FLAGGED LEAKED MEMORY
+  //INVALID POINTER
+  char *obj = malloc(100);
+  free(obj+1);
+  return EXIT_FAILURE;
+}
+
 int test1() {
   //BASIC
   char *obj[2];
@@ -24,25 +43,8 @@ int test2() {
   return EXIT_FAILURE; // Curiouser and curiouser
 }
 
-int test3() { //CHECKED, PASSES
-  //DOUBLE FREE
-  char *obj = malloc(100);
-  if (obj == NULL) {
-    return EXIT_FAILURE;
-  }
-  free(obj);
-  free(obj);
-  return EXIT_FAILURE;
-}
 
-int test4() { //CHECKED, PASSES AND FLAGGED LEAKED MEMORY
-  //INVALID POINTER
-  char *obj = malloc(100);
-  free(obj+1);
-  return EXIT_FAILURE;
-}
-
-int test5() {
+int test3() {
   //CHECKING 8-BYTE ALIGNMENT AND OVERFILLING
   char *obj[256];
   for (int i = 0; i < 256; i++) {
@@ -62,7 +64,7 @@ int test5() {
   return EXIT_SUCCESS;
 }
 
-int test6() {
+int test4() {
   //CHECK COALESCING CASE 3
   char *obj1 = malloc(100); //000---------------------------
   char *obj2 = malloc(100); //000000------------------------
@@ -76,7 +78,7 @@ int test6() {
   return EXIT_SUCCESS;
 }
 
-int test7() {
+int test5() {
   //CHECK COALESCING CASE 2
   char *obj1 = malloc(100); //000---------------------------
   char *obj2 = malloc(100); //000000------------------------
@@ -90,7 +92,7 @@ int test7() {
   return EXIT_SUCCESS;
 }
 
-int test8() {
+int test6() {
   //CHECK COALESCING CASE 1
   char *obj1 = malloc(100); //000---------------------------
   char *obj2 = malloc(100); //000000------------------------
@@ -106,9 +108,19 @@ int test8() {
   return EXIT_SUCCESS;
 }
 
+int test7() {
+  // MAX MALLOC
+  char *obj = malloc(4088);
+  if (obj != NULL) {
+    free(obj);
+    return EXIT_SUCCESS; // pass test
+  }
+  return EXIT_FAILURE; 
+}
+
 int main(int argc, char **argv) {
   int (*tests[])() = {
-    test1, test2, test5, test6, test7, test8,
+    test1, test2, test3, test4, test5, test6, test7
   };
   double num_tests = sizeof(tests) / sizeof(tests[0]);
   int num_passed = 0;
