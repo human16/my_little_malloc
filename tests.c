@@ -90,9 +90,25 @@ int test7() {
   return EXIT_SUCCESS;
 }
 
+int test8() {
+  //CHECK COALESCING CASE 1
+  char *obj1 = malloc(100); //000---------------------------
+  char *obj2 = malloc(100); //000000------------------------
+  char *obj3 = malloc(100); //000000000---------------------
+  free(obj1);               //---000000---------------------
+  free(obj2);               //------000---------------------
+  free(obj3);
+  char *obj4 = malloc(4000);
+  if (obj4 == NULL) {
+    return EXIT_FAILURE;
+  }
+  free(obj4);
+  return EXIT_SUCCESS;
+}
+
 int main(int argc, char **argv) {
   int (*tests[])() = {
-    test6, test7, 
+    test1, test2, test5, test6, test7, test8,
   };
   double num_tests = sizeof(tests) / sizeof(tests[0]);
   int num_passed = 0;

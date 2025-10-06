@@ -249,7 +249,6 @@ void myfree(void *ptr, char *file, int line) {
     }
    }
    if (md->next != 0) { // checking if next chunk is free
-    printf("next chunk is free\n");
     metadata *next_md = get_metadata(heap.bytes + md->next);
     if (!next_md->is_allocated) {
       // case 2 as discribed in the README
