@@ -1,25 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "mymalloc.h"
-
-
-int test_double_free() { //CHECKED, PASSES
-  //DOUBLE FREE
-  char *obj = malloc(100);
-  if (obj == NULL) {
-    return EXIT_FAILURE;
-  }
-  free(obj);
-  free(obj);
-  return EXIT_FAILURE;
-}
-
-int test_invalid_pointer() { //CHECKED, PASSES AND FLAGGED LEAKED MEMORY
-  //INVALID POINTER
-  char *obj = malloc(100);
-  free(obj+1);
-  return EXIT_FAILURE;
-}
 
 int test1() {
   //BASIC
@@ -115,12 +97,63 @@ int test7() {
     free(obj);
     return EXIT_SUCCESS; // pass test
   }
-  return EXIT_FAILURE; 
+  return EXIT_FAILURE;
+}
+
+int test8() {
+  // MALLOC(0)
+  char *obj = malloc(0);
+  if (obj == NULL) {
+    return EXIT_SUCCESS; 
+  }
+  free(obj);
+  return EXIT_FAILURE;
+}
+
+int test_double_free() { //CHECKED, PASSES
+  //DOUBLE FREE
+  char *obj = malloc(100);
+  if (obj == NULL) {
+    return EXIT_FAILURE;
+  }
+  free(obj);
+  free(obj);
+  return EXIT_FAILURE;
+}
+
+int test_invalid_pointer() { //CHECKED, PASSES AND FLAGGED LEAKED MEMORY
+  //INVALID POINTER
+  char *obj = malloc(100);
+  free(obj+1);
+  return EXIT_FAILURE;
+}
+
+int test_inappropriate_pointer() { //CHECKED, SHOULD EXIT WITH CODE 2
+  // INAPPROPRIATE POINTER (outside heap)
+  int stack_var = 42;
+  free(&stack_var);
+  return EXIT_FAILURE;
 }
 
 int main(int argc, char **argv) {
+  // Check if user wants to run a specific error test
+  if (argc > 1) {
+    if (strcmp(argv[1], "inappropriate") == 0) {
+      return test_inappropriate_pointer();
+    } else if (strcmp(argv[1], "double_free") == 0) {
+      return test_double_free();
+    } else if (strcmp(argv[1], "invalid") == 0) {
+      return test_invalid_pointer();
+    } else {
+      printf("Unknown test: %s\n", argv[1]);
+      printf("Available error tests: inappropriate, double_free, invalid\n");
+      return EXIT_FAILURE;
+    }
+  }
+
+  // Normal test suite
   int (*tests[])() = {
-    test1, test2, test3, test4, test5, test6, test7
+    test1, test2, test3, test4, test5, test6, test7, test8
   };
   double num_tests = sizeof(tests) / sizeof(tests[0]);
   int num_passed = 0;

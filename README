@@ -128,8 +128,55 @@ more details will be added as time goes on.
 Testing will be conducted through the file tests.c
 Each test will be a different function and when running "make test" the resulting binary will run all tests.
 
+## Running Tests:
+
+### Normal Tests:
+Run `./test` with no arguments to execute the standard tests (test1-test8)
+
+### Error Tests (crash the program so we can't run w/ test suite):
+Run `./test <test_name>` to execute specific error tests:
+- `./test inappropriate` - Tests freeing a pointer outside the heap (should exit with code 2)
+- `./test double_free` - Tests double free detection (should exit with code 2)
+- `./test invalid` - Tests freeing an invalid pointer offset (should exit with code 2)
+
+## Test Descriptions:
+
 ## test 1:
-    Create two objects and then free them. Easy
+    Create two objects and then free them. Basic allocation and deallocation.
 
 ## test 2:
-    Try to allocate more space than is available
+    Try to allocate more space than is available (4096 bytes). Should return NULL.
+
+## test 3:
+    Checking 8-byte alignment and overfilling. Allocates 256 1-byte objects 
+    which should fill the heap. Verifies that an additional allocation fails.
+
+## test 4:
+    Check coalescing case 3.
+    Allocates two blocks, frees them in order and then verifies a large allocation succeeds.
+
+## test 5:
+    Check coalescing case 2 (next block is free).
+    Allocates two blocks, frees them in reverse order (second then first), then verifies a large allocation succeeds.
+
+## test 6:
+    Check coalescing case 1 (previous block is free).
+    Allocates three blocks, frees first, then second, then third. Verifies proper coalescing with previous block.
+
+## test 7:
+    Max malloc test. Attempts to allocate 4088 bytes (maximum available after metadata).
+    Should succeed and be able to free.
+
+## test 8:
+    malloc(0) test. Attempts to allocate 0 bytes. Should return NULL.
+
+## Error Tests (run separately):
+
+## test_double_free:
+    Allocates memory, frees it, then attempts to free it again. Should detect double free and exit with code 2.
+
+## test_invalid_pointer:
+    Allocates memory, then attempts to free an offset pointer (obj+1). Should detect invalid pointer and exit with code 2.
+
+## test_inappropriate_pointer:
+    Attempts to free a stack variable (pointer outside heap range). Should detect inappropriate pointer and exit with code 2.
