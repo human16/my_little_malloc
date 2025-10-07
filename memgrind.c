@@ -165,5 +165,6 @@ int main(int argc, char **argv) {
     run_test(second_test, 50, 2);
     run_test(third_test, 50, 3);
     run_test(fourth_test, 50, 4);
+    run_test(fifth_test, 50, 5);
     return EXIT_SUCCESS;
 }
