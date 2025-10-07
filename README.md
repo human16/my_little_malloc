@@ -16,9 +16,26 @@ To run it with debugging, use `make debug-test`, which will generate a file whic
 
 ## memgrind
 
-To run memgrind regularly, use `make memgrind`, which will generate a file whihc will run with `./memgrind`
+To run memgrind regularly, use `make memgrind`, which will generate a file which will run with `./memgrind`
 
 To run it with debugging, use `make debug-memgrind`, which will generate a file which will run with `./debug-memgrind`
+
+### Memgrind Tests
+
+**Test 1: Immediate Alloc/Free Pattern**
+Allocates 1 byte and immediately frees it, repeated 120 times. Tests basic malloc/free functionality and ensures the allocator can handle rapid allocation-deallocation cycles without fragmentation issues.
+
+**Test 2: Bulk Allocation Then Bulk Free**
+Allocates 120 1-byte chunks first, then frees all of them. Tests whether the allocator can handle many simultaneous allocations and verifies proper mass deallocation without memory corruption.
+
+**Test 3: Random Allocation/Deallocation**
+Randomly alternates between allocating new chunks and freeing existing ones over 120 iterations. Simulates realistic usage patterns and stress-tests coalescing logic under unpredictable conditions.
+
+**Test 4: Linked List Simulation**
+Creates a 120-node linked list by allocating larger blocks and frees them in LIFO order. Tests the allocator with variable-sized allocations and sequential memory access patterns typical of linked data structures.
+
+**Test 5: Binary Tree Simulation**
+Builds a 120-node binary tree and recursively frees all nodes. Tests complex allocation patterns with multiple sizes and validates proper cleanup of hierarchical data structures.
 
 # Plan
 
