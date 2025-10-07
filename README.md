@@ -16,47 +16,67 @@ To run it with debugging, use `make debug-test`, which will generate a file whic
 
 ## memgrind
 
-To run memgrind regularly, use `make memgrind`, which will generate a file whihc will run with `./memgrind`
+To run memgrind regularly, use `make memgrind`, which will generate a file which will run with `./memgrind`
 
 To run it with debugging, use `make debug-memgrind`, which will generate a file which will run with `./debug-memgrind`
 
-# Plan:
+### Memgrind Tests
 
+**Test 1: Immediate Alloc/Free Pattern**
+Allocates 1 byte and immediately frees it, repeated 120 times. Tests basic malloc/free functionality and ensures the allocator can handle rapid allocation-deallocation cycles without fragmentation issues.
 
-# Testing:
+**Test 2: Bulk Allocation Then Bulk Free**
+Allocates 120 1-byte chunks first, then frees all of them. Tests whether the allocator can handle many simultaneous allocations and verifies proper mass deallocation without memory corruption.
+
+**Test 3: Random Allocation/Deallocation**
+Randomly alternates between allocating new chunks and freeing existing ones over 120 iterations. Simulates realistic usage patterns and stress-tests coalescing logic under unpredictable conditions.
+
+**Test 4: Linked List Simulation**
+Creates a 120-node linked list by allocating larger blocks and frees them in LIFO order. Tests the allocator with variable-sized allocations and sequential memory access patterns typical of linked data structures.
+
+**Test 5: Binary Tree Simulation**
+Builds a 120-node binary tree and recursively frees all nodes. Tests complex allocation patterns with multiple sizes and validates proper cleanup of hierarchical data structures.
+
+# Plan
+
+# Testing
 
 Testing will be conducted through the file tests.c
 Each test will be a different function and when running "make test" the resulting binary will run all tests.
 
+## test 1
 
-## test 1:
     Create two objects and then free them. Easy
 
-## test 2:
+## test 2
+
     Try to allocate more space than is available
 
-## test 3:
+## test 3
+
     Try to double free
 
-## test4:
+## test4
+
     Pass an invalid pointer to free
 
-## test5:
+## test5
+
     Try to overfill the heap and make sure when allocating 1 byte, 8 will be reserved in the heap.
 
-## test6:
+## test6
+
     Check coalescing case 3
 
-## test7:
+## test7
+
     Check coalescing case 2
 
-## test8:
+## test8
+
     Check coalescing case 1
 
-
-
-
-## DEBUGING:
+## DEBUGING
 
 Included in the make files are 3 important options:
 
@@ -72,7 +92,7 @@ make debug-test: Will run `tests.c` with the debug-enabled `mymalloc.c`
 
 make debug-memgrind: Will run `memgrind.c` with the debug-enabled `mymalloc.c`
 
-## METADATA:
+## METADATA
 
 According to section 1.2, alignment will be done on an 8-byte basis
 
@@ -91,7 +111,8 @@ that leaves us with 7 of our available 8 metadata bytes.
 
 We'll leave the last byte to be whatever, it will not be used.
 
-### METADATA STRUCTURE:
+### METADATA STRUCTURE
+
 metadata = 8 chars (bytes)
 
 `metadata[0,1]`   := prev pointer: a number between 0-511 (can go higher, but will not) that represents the chunk location of the previous chunk
@@ -108,8 +129,7 @@ metadata = 8 chars (bytes)
 
 `metadata[7]`     := undefined, do not use
 
-
-## MY_MALLOC:
+## MY_MALLOC
 
 Malloc will allocate a number of bytes divisible by 8 that is greater than or equal to the number of bytes passed in by the client.
 
@@ -121,13 +141,11 @@ If we cannot find a chunk that can fulfil the client's request then return NULL 
 
 If mymalloc is able to reverse unallocated memory we need to return a pointer to an object that does not overlap with another allocated object
 
-
-## INITIALIZE_HEAP:
-
+## INITIALIZE_HEAP
 
 Here is need to write the first header using out 8 byte metadata structure:
 
-`metadata[0,1]`: prev pointer should be set to 1 
+`metadata[0,1]`: prev pointer should be set to 1
 
 `metadata[2,3]`: next pointer should be set to 0 since there are no next blocks
 
@@ -135,12 +153,9 @@ Here is need to write the first header using out 8 byte metadata structure:
 
 `metadata[5,6]`: length/size of our chunk should be set to 4088 since we allocate 8 bytes for the header
 
-Register a leak detection function that runs when the program terminates by calling atexit in the `initialize heap` function 
+Register a leak detection function that runs when the program terminates by calling atexit in the `initialize heap` function
 
-
-
-## FREE:
-
+## FREE
 
 Free is a relatively easy function. All we have to do is go to the correct place in the heap, and change the metadata to denote the block is free.
 
@@ -171,6 +186,6 @@ However, We should deal with the possibility that adjacent blocks are free. ther
     --------change the next block's previous pointer to the previous block's previous pointer.
     ----This basically combines the last two cases.
 
-if an object that is already free is freed again or out of bounds free, crash out. 
+if an object that is already free is freed again or out of bounds free, crash out.
 
 more details will be added as time goes on.
