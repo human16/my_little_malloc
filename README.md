@@ -22,6 +22,40 @@ To run it with debugging, use `make debug-memgrind`, which will generate a file 
 
 # Plan:
 
+
+# Testing:
+
+Testing will be conducted through the file tests.c
+Each test will be a different function and when running "make test" the resulting binary will run all tests.
+
+
+## test 1:
+    Create two objects and then free them. Easy
+
+## test 2:
+    Try to allocate more space than is available
+
+## test 3:
+    Try to double free
+
+## test4:
+    Pass an invalid pointer to free
+
+## test5:
+    Try to overfill the heap and make sure when allocating 1 byte, 8 will be reserved in the heap.
+
+## test6:
+    Check coalescing case 3
+
+## test7:
+    Check coalescing case 2
+
+## test8:
+    Check coalescing case 1
+
+
+
+
 ## DEBUGING:
 
 Included in the make files are 3 important options:
@@ -33,6 +67,10 @@ make clean:     Will clean the files created by make. Gotta love organization ðŸ
 make debug:     Will run the program with `DEBUG=1`, this allows us to shove extra monitoring into mymalloc.c and monitor more components of the program while it runs.
                 In mymalloc.c, we can add if statements that will only run `if (DEBUG)`, that's how we insert tests.
                 Test comments should follow the format `"| *Function*: ________"`
+
+make debug-test: Will run `tests.c` with the debug-enabled `mymalloc.c`
+
+make debug-memgrind: Will run `memgrind.c` with the debug-enabled `mymalloc.c`
 
 ## METADATA:
 
@@ -136,37 +174,3 @@ However, We should deal with the possibility that adjacent blocks are free. ther
 if an object that is already free is freed again or out of bounds free, crash out. 
 
 more details will be added as time goes on.
-
-
-################################################################################################
-################################################################################################
-
-
-# Testing:
-
-Testing will be conducted through the file tests.c
-Each test will be a different function and when running "make test" the resulting binary will run all tests.
-
-## test 1:
-    Create two objects and then free them. Easy
-
-## test 2:
-    Try to allocate more space than is available
-
-## test 3:
-    Try to double free
-
-## test4:
-    Pass an invalid pointer to free
-
-## test5:
-    Try to overfill the heap and make sure when allocating 1 byte, 8 will be reserved in the heap.
-
-## test6:
-    Check coalescing case 3
-
-## test7:
-    Check coalescing case 2
-
-## test8:
-    Check coalescing case 1
