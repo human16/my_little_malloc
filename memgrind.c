@@ -96,18 +96,51 @@ struct binary_node {
     int data;
 };
 
+void free_tree(struct binary_node *node) {
+    if (node == NULL) {
+        return;
+    }
+    free_tree(node->left);
+    free_tree(node->right);
+    free(node);
+}
+
 int fifth_test() {
     //simulate a binary tree
-    struct binary_node *root = NULL;
-    for (int i = 0; i < 120; i++) {
+    struct binary_node *root = malloc(sizeof(struct binary_node));
+    if (root == NULL) {
+        return EXIT_FAILURE;
+    }
+    root->data = 0;
+    root->left = NULL;
+    root->right = NULL;
+
+    struct binary_node *nodes[120];
+    nodes[0] = root;
+    int node_count = 1;
+
+    for (int i = 1; i < 120; i++) {
         struct binary_node *new_node = malloc(sizeof(struct binary_node));
         if (new_node == NULL) {
+            free_tree(root);
             return EXIT_FAILURE;
         }
+        new_node->data = i;
+        new_node->left = NULL;
+        new_node->right = NULL;
+        nodes[node_count] = new_node;
 
+        // Insert into tree - alternate between left and right children
+        int parent_index = (node_count - 1) / 2;
+        if (node_count % 2 == 1) {
+            nodes[parent_index]->left = new_node;
+        } else {
+            nodes[parent_index]->right = new_node;
+        }
+        node_count++;
     }
 
-
+    free_tree(root);
     return EXIT_SUCCESS;
 }
 
