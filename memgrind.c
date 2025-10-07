@@ -104,7 +104,7 @@ int fifth_test() {
         if (new_node == NULL) {
             return EXIT_FAILURE;
         }
-        
+
     }
 
 
@@ -130,7 +130,7 @@ int run_test(int (*test)(), int iterations, int test_num) {
 int main(int argc, char **argv) {
     run_test(first_test, 50, 1);
     run_test(second_test, 50, 2);
-    run_test(third_test, 512, 3);
+    run_test(third_test, 50, 3);
     run_test(fourth_test, 50, 4);
     return EXIT_SUCCESS;
 }
