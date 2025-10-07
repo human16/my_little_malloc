@@ -103,6 +103,10 @@ void * mymalloc(size_t size, char *file, int line) {
     initialize_heap();
   }
 
+  if (size == 0) {
+    return NULL;
+  }
+
   size_t size_rounded = size;
   if (size % 8 != 0) {
     size_rounded = size + (8 - (size % 8));

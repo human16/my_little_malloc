@@ -20,43 +20,46 @@ To run memgrind regularly, use `make memgrind`, which will generate a file whihc
 
 To run it with debugging, use `make debug-memgrind`, which will generate a file which will run with `./debug-memgrind`
 
-# Plan:
+# Plan
 
-
-# Testing:
+# Testing
 
 Testing will be conducted through the file tests.c
 Each test will be a different function and when running "make test" the resulting binary will run all tests.
 
+## test 1
 
-## test 1:
     Create two objects and then free them. Easy
 
-## test 2:
+## test 2
+
     Try to allocate more space than is available
 
-## test 3:
+## test 3
+
     Try to double free
 
-## test4:
+## test4
+
     Pass an invalid pointer to free
 
-## test5:
+## test5
+
     Try to overfill the heap and make sure when allocating 1 byte, 8 will be reserved in the heap.
 
-## test6:
+## test6
+
     Check coalescing case 3
 
-## test7:
+## test7
+
     Check coalescing case 2
 
-## test8:
+## test8
+
     Check coalescing case 1
 
-
-
-
-## DEBUGING:
+## DEBUGING
 
 Included in the make files are 3 important options:
 
@@ -72,7 +75,7 @@ make debug-test: Will run `tests.c` with the debug-enabled `mymalloc.c`
 
 make debug-memgrind: Will run `memgrind.c` with the debug-enabled `mymalloc.c`
 
-## METADATA:
+## METADATA
 
 According to section 1.2, alignment will be done on an 8-byte basis
 
@@ -91,7 +94,8 @@ that leaves us with 7 of our available 8 metadata bytes.
 
 We'll leave the last byte to be whatever, it will not be used.
 
-### METADATA STRUCTURE:
+### METADATA STRUCTURE
+
 metadata = 8 chars (bytes)
 
 `metadata[0,1]`   := prev pointer: a number between 0-511 (can go higher, but will not) that represents the chunk location of the previous chunk
@@ -108,8 +112,7 @@ metadata = 8 chars (bytes)
 
 `metadata[7]`     := undefined, do not use
 
-
-## MY_MALLOC:
+## MY_MALLOC
 
 Malloc will allocate a number of bytes divisible by 8 that is greater than or equal to the number of bytes passed in by the client.
 
@@ -121,13 +124,11 @@ If we cannot find a chunk that can fulfil the client's request then return NULL 
 
 If mymalloc is able to reverse unallocated memory we need to return a pointer to an object that does not overlap with another allocated object
 
-
-## INITIALIZE_HEAP:
-
+## INITIALIZE_HEAP
 
 Here is need to write the first header using out 8 byte metadata structure:
 
-`metadata[0,1]`: prev pointer should be set to 1 
+`metadata[0,1]`: prev pointer should be set to 1
 
 `metadata[2,3]`: next pointer should be set to 0 since there are no next blocks
 
@@ -135,12 +136,9 @@ Here is need to write the first header using out 8 byte metadata structure:
 
 `metadata[5,6]`: length/size of our chunk should be set to 4088 since we allocate 8 bytes for the header
 
-Register a leak detection function that runs when the program terminates by calling atexit in the `initialize heap` function 
+Register a leak detection function that runs when the program terminates by calling atexit in the `initialize heap` function
 
-
-
-## FREE:
-
+## FREE
 
 Free is a relatively easy function. All we have to do is go to the correct place in the heap, and change the metadata to denote the block is free.
 
@@ -171,6 +169,81 @@ However, We should deal with the possibility that adjacent blocks are free. ther
     --------change the next block's previous pointer to the previous block's previous pointer.
     ----This basically combines the last two cases.
 
-if an object that is already free is freed again or out of bounds free, crash out. 
+if an object that is already free is freed again or out of bounds free, crash out.
 
 more details will be added as time goes on.
+
+################################################################################################
+################################################################################################
+
+# Testing
+
+Testing will be conducted through the file tests.c
+Each test will be a different function and when running "make test" the resulting binary will run all tests.
+
+## Running Tests
+
+### Normal Tests
+
+Run `./test` with no arguments to execute the standard tests (test1-test8)
+
+### Error Tests (crash the program so we can't run w/ test suite)
+
+Run `./test <test_name>` to execute specific error tests:
+
+- `./test inappropriate` - Tests freeing a pointer outside the heap (should exit with code 2)
+- `./test double_free` - Tests double free detection (should exit with code 2)
+- `./test invalid` - Tests freeing an invalid pointer offset (should exit with code 2)
+
+## Test Descriptions
+
+## test 1
+
+    Create two objects and then free them. Basic allocation and deallocation.
+
+## test 2
+
+    Try to allocate more space than is available (4096 bytes). Should return NULL.
+
+## test 3
+
+    Checking 8-byte alignment and overfilling. Allocates 256 1-byte objects 
+    which should fill the heap. Verifies that an additional allocation fails.
+
+## test 4
+
+    Check coalescing case 3.
+    Allocates two blocks, frees them in order and then verifies a large allocation succeeds.
+
+## test 5
+
+    Check coalescing case 2 (next block is free).
+    Allocates two blocks, frees them in reverse order (second then first), then verifies a large allocation succeeds.
+
+## test 6
+
+    Check coalescing case 1 (previous block is free).
+    Allocates three blocks, frees first, then second, then third. Verifies proper coalescing with previous block.
+
+## test 7
+
+    Max malloc test. Attempts to allocate 4088 bytes (maximum available after metadata).
+    Should succeed and be able to free.
+
+## test 8
+
+    malloc(0) test. Attempts to allocate 0 bytes. Should return NULL.
+
+## Error Tests (run separately)
+
+## test_double_free
+
+    Allocates memory, frees it, then attempts to free it again. Should detect double free and exit with code 2.
+
+## test_invalid_pointer
+
+    Allocates memory, then attempts to free an offset pointer (obj+1). Should detect invalid pointer and exit with code 2.
+
+## test_inappropriate_pointer
+
+    Attempts to free a stack variable (pointer outside heap range). Should detect inappropriate pointer and exit with code 2.
